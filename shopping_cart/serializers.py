@@ -12,7 +12,6 @@ class ItemSerializer(ModelSerializer):
 
 
 class ShoppingCartSerializer(serializers.ModelSerializer):
-    customer_id = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
     items = ItemSerializer(many=True)
 
     class Meta:
@@ -25,12 +24,13 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
         for item_data in items_data:
             item = Item.objects.create(**item_data)
             shopping_cart.items.add(item)
+            shopping_cart.total += item.total_price
         return shopping_cart
 
-    def validate(self, attrs):
-        customer_id = attrs['customer_id']
 
-        existing_cart = ShoppingCart.objects.filter(customer_id=customer_id).exists()
-        if existing_cart:
-            raise serializers.ValidationError({"customer_id": "customer already have a shopping cart"})
-        return attrs
+class ShowShoppingCartSerializer(serializers.ModelSerializer):
+    items = ItemSerializer(many=True)
+
+    class Meta:
+        model = ShoppingCart
+        fields = '__all__'
